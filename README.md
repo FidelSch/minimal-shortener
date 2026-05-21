@@ -35,8 +35,19 @@ pip install -r requirements-dev.txt
 
 ## Variables de entorno
 
-- `REDIS_URL`: URL de conexión a Redis.
-  - Valor por defecto: `redis://localhost:6379`
+Copia `.env.example` a `.env` y ajusta los valores antes de iniciar los servicios:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Descripción | Valor por defecto |
+|---|---|---|
+| `REDIS_URL` | URL de conexión a Redis (construida automáticamente en Compose) | `redis://localhost:6379` |
+| `REDIS_PASSWORD` | Contraseña de autenticación de Redis | — |
+| `GF_ADMIN_PASSWORD` | Contraseña del usuario `admin` de Grafana | — |
+
+> **Nunca commits el archivo `.env` con credenciales reales.** Está incluido en `.gitignore`. Para CI/CD, define estas variables como secretos en tu plataforma (p. ej. GitHub Actions Secrets).
 
 ## Observabilidad
 
@@ -99,7 +110,7 @@ Accede a:
 
 - App: `http://localhost:8080`
 - Prometheus: `http://localhost:9090`
-- Grafana: `http://localhost:3000` (user: `admin`, password: `admin`)
+- Grafana: `http://localhost:3000` (user: `admin`, password: valor de `GF_ADMIN_PASSWORD` en `.env`)
 
 ## Prometheus
 
