@@ -3,10 +3,11 @@ import os
 import random
 import string
 import time
+from typing import Optional
 
 import redis.asyncio as aioredis
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, HttpUrl
 from prometheus_client import Counter, Histogram, CONTENT_TYPE_LATEST, generate_latest, Info
@@ -19,7 +20,7 @@ logger = logging.getLogger("url_shortener")
 
 app = FastAPI(title="URL Shortener")
 
-_redis: aioredis.Redis | None = None
+_redis: Optional[aioredis.Redis] = None
 
 
 class ShortenRequest(BaseModel):
