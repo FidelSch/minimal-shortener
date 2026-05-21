@@ -25,6 +25,9 @@ class DummyRedis:
         self.get_calls.append(key)
         return self.values.get(key)
 
+    async def ping(self):
+        return True
+
     async def aclose(self):
         return None
 
@@ -109,3 +112,30 @@ async def test_redirect_returns_404_for_missing_code(monkeypatch):
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Short code not found"
+
+
+@pytest.mark.asyncio
+async def test_health_endpoint_ok(monkeypatch):
+    dummy = DummyRedis()
+    monkeypatch.setattr(main, "_redis", dummy)
+
+    transport = ASGITransport(app=main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/health")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["status"] == "ok"
+    assert response.json()["redis"] == "connected"
+
+
+@pytest.mark.asyncio
+async def test_metrics_endpoint_exposes_prometheus(monkeypatch):
+    dummy = DummyRedis()
+    monkeypatch.setattr(main, "_redis", dummy)
+
+    transport = ASGITransport(app=main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/metrics")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert "http_requests_total" in response.text
