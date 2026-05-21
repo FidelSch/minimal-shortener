@@ -51,7 +51,7 @@ async def test_shorten_url_creates_new_code(monkeypatch):
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
     assert data["short_code"]
-    assert data["short_url"] == f"/{data['short_code']}"
+    assert data["short_url"] == f"http://test/{data['short_code']}"
     assert dummy.values[f"url:{data['short_code']}"] == "https://example.com/"
 
 
