@@ -140,13 +140,14 @@ async def health() -> JSONResponse:
 
 
 @app.post("/shorten", response_model=ShortenResponse, status_code=201)
-async def shorten_url(body: ShortenRequest):
+async def shorten_url(body: ShortenRequest, request: Request):
     url = str(body.url)
+    base_url = os.getenv("BASE_URL", str(request.base_url).rstrip("/"))
     for _ in range(10):
         code = _generate_code()
         try:
             if await _redis.set(f"url:{code}", url, nx=True):
-                return ShortenResponse(short_code=code, short_url=f"/{code}")
+                return ShortenResponse(short_code=code, short_url=f"{base_url}/{code}")
         except RedisError:
             REDIS_ERRORS.labels(operation="set").inc()
             raise HTTPException(status_code=503, detail="Redis unavailable")
