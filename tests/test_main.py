@@ -132,10 +132,37 @@ async def test_health_endpoint_ok(monkeypatch):
 async def test_metrics_endpoint_exposes_prometheus(monkeypatch):
     dummy = DummyRedis()
     monkeypatch.setattr(main, "_redis", dummy)
+    monkeypatch.setattr(main, "METRICS_TOKEN", "test-metrics-token")
+
+    transport = ASGITransport(app=main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/metrics", headers={"Authorization": "Bearer test-metrics-token"})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert "http_requests_total" in response.text
+
+
+@pytest.mark.asyncio
+async def test_metrics_endpoint_rejects_missing_token(monkeypatch):
+    dummy = DummyRedis()
+    monkeypatch.setattr(main, "_redis", dummy)
+    monkeypatch.setattr(main, "METRICS_TOKEN", "test-metrics-token")
 
     transport = ASGITransport(app=main.app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/metrics")
 
-    assert response.status_code == status.HTTP_200_OK
-    assert "http_requests_total" in response.text
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.asyncio
+async def test_metrics_endpoint_rejects_wrong_token(monkeypatch):
+    dummy = DummyRedis()
+    monkeypatch.setattr(main, "_redis", dummy)
+    monkeypatch.setattr(main, "METRICS_TOKEN", "test-metrics-token")
+
+    transport = ASGITransport(app=main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/metrics", headers={"Authorization": "Bearer wrong-token"})
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED

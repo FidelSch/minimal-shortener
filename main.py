@@ -6,7 +6,8 @@ import time
 from typing import Optional
 
 import redis.asyncio as aioredis
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, HttpUrl
@@ -14,6 +15,9 @@ from prometheus_client import Counter, Histogram, CONTENT_TYPE_LATEST, generate_
 from redis.exceptions import RedisError
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+METRICS_TOKEN = os.getenv("METRICS_TOKEN", "")
+
+_bearer = HTTPBearer()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("url_shortener")
@@ -117,7 +121,9 @@ def _generate_code(length: int = 6) -> str:
 
 
 @app.get("/metrics")
-async def metrics() -> Response:
+async def metrics(credentials: HTTPAuthorizationCredentials = Security(_bearer)) -> Response:
+    if not METRICS_TOKEN or credentials.credentials != METRICS_TOKEN:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
