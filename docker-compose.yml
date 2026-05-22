@@ -5,6 +5,7 @@ services:
       - "8080:8000"
     environment:
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - METRICS_TOKEN=${METRICS_TOKEN}
     depends_on:
       redis:
         condition: service_healthy
@@ -43,6 +44,11 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--config.expand-env=true'
+    environment:
+      - METRICS_TOKEN=${METRICS_TOKEN}
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
